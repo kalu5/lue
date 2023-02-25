@@ -1,5 +1,10 @@
+interface Option {
+  scheduler?: (fn: EffectFunc) => void
+}
+type EffectFunc = { (): void; options: Option; deps: EffectFunc[]; }
+
 // 存储当前的副作用函数
-export let activeEffect = null
+export let activeEffect: EffectFunc | null = null
 
 // 存储代理对象的副作用函数
 /**
@@ -10,7 +15,7 @@ export let activeEffect = null
 const proxyMap = new WeakMap()
 
 // 利用栈结构，解决嵌套的effect，建立清晰的响应式连接
-const stackEffect = []
+const stackEffect: EffectFunc[] = []
 
 export function track(target, key) {
   if (!activeEffect) return 
@@ -36,11 +41,21 @@ export function trigger(target, key) {
   if (!deps) return
   // Set结构， delete add 会死循环，用新Set处理
   const depsTorun = new Set(deps)
-  depsTorun.forEach(fn => fn())
+  deps.forEach(fn => {
+    // 避免无限制递归循环
+    if (activeEffect !== fn) {
+      depsTorun.add(fn)
+    }
+  })
+  depsTorun.forEach((fn: any) => {
+    fn.options.scheduler 
+    ? fn.options.scheduler(fn)
+    : fn()
+  })
   
 }
 
-export function effect (fn) {
+export function effect (fn, options = {}) {
   const effectFn = () => {
     try {
       cleanup(effectFn)
@@ -51,6 +66,7 @@ export function effect (fn) {
       activeEffect = null
     }
   }
+  effectFn.options = options
   // 当前副作用的所有依赖
   effectFn.deps = []
   effectFn()
