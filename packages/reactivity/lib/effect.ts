@@ -1,5 +1,6 @@
 interface Option {
-  scheduler?: (fn: EffectFunc) => void
+  scheduler?: (fn: EffectFunc) => void;
+  lazy?: boolean
 }
 type EffectFunc = { (): void; options: Option; deps: EffectFunc[]; }
 
@@ -55,21 +56,27 @@ export function trigger(target, key) {
   
 }
 
-export function effect (fn, options = {}) {
+export function effect (fn, options: Option = {}) {
   const effectFn = () => {
+    let res
     try {
       cleanup(effectFn)
       activeEffect = effectFn
       stackEffect.push(activeEffect)
-      fn()
+      res = fn()
     } finally {
       activeEffect = null
     }
+    return res
   }
   effectFn.options = options
   // 当前副作用的所有依赖
   effectFn.deps = []
-  effectFn()
+  
+  if (!options.lazy) {
+    effectFn()
+  }
+  
   stackEffect.pop()
   activeEffect = stackEffect[stackEffect.length-1]
   return effectFn
