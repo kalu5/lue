@@ -37,4 +37,25 @@ describe('reactive', () => {
     expect(fn).toBeCalledTimes(3)
 
   })
+
+  it('嵌套effect', () => {
+    const data = { foo: true, bar: true }
+    let result = '';
+    let result2 = '';
+    let obj = reactive(data)
+    const fn1 = vi.fn(() => {})
+    const fn2 = vi.fn(() => {})
+    effect(() => {
+      fn1()
+      effect(() => {
+        fn2()
+        result2 = obj.bar
+      })
+      result = obj.foo
+    })
+    expect(fn1).toBeCalledTimes(1)
+    expect(fn2).toBeCalledTimes(1)
+    obj.foo = false
+    expect(fn1).toBeCalledTimes(2)
+  })
 })

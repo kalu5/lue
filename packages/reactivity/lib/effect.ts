@@ -9,6 +9,9 @@ export let activeEffect = null
 */
 const proxyMap = new WeakMap()
 
+// 利用栈结构，解决嵌套的effect，建立清晰的响应式连接
+const stackEffect = []
+
 export function track(target, key) {
   if (!activeEffect) return 
   let depsMap = proxyMap.get(target)
@@ -42,6 +45,7 @@ export function effect (fn) {
     try {
       cleanup(effectFn)
       activeEffect = effectFn
+      stackEffect.push(activeEffect)
       fn()
     } finally {
       activeEffect = null
@@ -50,6 +54,8 @@ export function effect (fn) {
   // 当前副作用的所有依赖
   effectFn.deps = []
   effectFn()
+  stackEffect.pop()
+  activeEffect = stackEffect[stackEffect.length-1]
   return effectFn
 }
 
