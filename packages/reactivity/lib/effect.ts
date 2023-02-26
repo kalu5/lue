@@ -2,7 +2,7 @@ interface Option {
   scheduler?: (fn: EffectFunc) => void;
   lazy?: boolean
 }
-type EffectFunc = { (): void; options: Option; deps: EffectFunc[]; }
+export type EffectFunc = { (): void; options: Option; deps: EffectFunc[]; }
 
 // 存储当前的副作用函数
 export let activeEffect: EffectFunc | null = null
