@@ -1,12 +1,13 @@
 import { track, trigger } from './effect'
 
-function get(target, key) {
+function get(target, key,receiver) {
   // 依赖收集
   track (target, key)
-  return target[key]
+  const res = Reflect.get(target, key, receiver)
+  return res
 }
-function set(target, key, newValue) {
-  target[key] = newValue
+function set(target, key, newValue, receiver) {
+  Reflect.set(target, key, newValue, receiver)
   // 触发副作用函数执行
   trigger (target, key)
   return true

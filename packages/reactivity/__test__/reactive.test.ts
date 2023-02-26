@@ -129,4 +129,22 @@ describe('reactive', () => {
     expect(fn).toHaveBeenCalledTimes(2)
     expect(fn).toHaveBeenCalledWith(3)
   })
+
+  it('Reflect', async () => {
+    const data = {
+      count: 1,
+      get total() {
+        // this指向原始对象使用Refelct指向代理对象
+        return this.count + 2
+      }
+    }
+    let obj = reactive(data)
+    let result = ''
+    effect(() => {
+      result = obj.total
+    })
+    expect(result).toBe(3)
+    obj.count ++
+    expect(result).toBe(4)
+  })
 })
