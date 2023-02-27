@@ -1,6 +1,10 @@
 import { effect } from "./effect";
+interface WatchOptions {
+  immediate?: boolean;
+  flush?: string;
+}
 
-export function watch(source, cb: Function) {
+export function watch(source, cb: Function, options: WatchOptions = {}) {
   // source可能时对象或getter
   let getter 
   typeof source === 'function'
@@ -10,11 +14,39 @@ export function watch(source, cb: Function) {
   // 监听对象中的每一个属性变化
   getter = () => traverse(source)
 
-  effect(getter, {
+  let oldVal
+  let newVal
+
+  let clean 
+
+  function onInvalid(fn) {
+    clean = fn
+  }
+
+  const job = () => {
+    newVal = effectFn()
+    if (clean) clean()
+    cb(newVal, oldVal, onInvalid)
+    oldVal = newVal
+  }
+
+  const effectFn = effect(getter, {
+    lazy: true,
     scheduler() {
-      cb()
+      if (options.flush === 'post') {
+        Promise.resolve().then(job)
+      } else {
+        job()
+      }
     }
   })
+
+  if (options.immediate) {
+    job()
+  } else {
+    oldVal = effectFn()
+  }
+  
 }
 
 function traverse(source, seen = new Set()) {
