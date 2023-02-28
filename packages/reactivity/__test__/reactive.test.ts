@@ -1,4 +1,4 @@
-import { reactive, effect } from '../lib/index'
+import { reactive, effect, shallowReactive } from '../lib/index'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 describe('reactive', () => {
@@ -146,5 +146,39 @@ describe('reactive', () => {
     expect(result).toBe(3)
     obj.count ++
     expect(result).toBe(4)
+  })
+
+  it('嵌套响应', async () => {
+    const data = {
+      count: 1,
+      child: {
+        count: 11
+      }
+    }
+    let obj = reactive(data)
+    let result 
+    effect(() => {
+      result = obj.child.count
+    })
+    expect(result).toBe(11)
+    obj.child.count ++
+    expect(result).toBe(12)
+  })
+
+  it('浅响应', async () => {
+    const data = {
+      count: 1,
+      child: {
+        count: 11
+      }
+    }
+    let obj = shallowReactive(data)
+    let result 
+    effect(() => {
+      result = obj.child.count
+    })
+    expect(result).toBe(11)
+    obj.child.count ++
+    expect(result).toBe(11)
   })
 })

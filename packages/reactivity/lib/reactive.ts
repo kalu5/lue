@@ -1,7 +1,8 @@
-import { mutableHandlers } from './baseHandlers'
+import { mutableHandlers , shallowMutableHandles} from './baseHandlers'
 
 // 缓存代理对象，每次调用都会产生新的代理对象
 const reactiveMap = new WeakMap()
+const shallowReactiveMap = new WeakMap()
 
 export function reactive(target) {
   // 优先从缓存中读取
@@ -19,6 +20,16 @@ function createReactiveObject(target, proxyMap, proxyHandlers ) {
     return target
   }
   const proxy = new Proxy(target, proxyHandlers)
+  return proxy
+}
+
+export function shallowReactive(target) {
+  // 优先从缓存中读取
+  const exisitionProxy = shallowReactiveMap.get(target)
+  if (exisitionProxy) return exisitionProxy
+  const proxy = createReactiveObject(target, shallowReactiveMap, shallowMutableHandles)
+  // 存入缓存
+  shallowReactiveMap.set(target, proxy)
   return proxy
 }
 
