@@ -181,4 +181,48 @@ describe('reactive', () => {
     obj.child.count ++
     expect(result).toBe(11)
   })
+
+  it('遍历对象/添加/修改', () => {
+    const data = { count: 1, total: 10 }
+    let obj = reactive(data)
+    const fn = vi.fn((...args) => {})
+    const fn2 = vi.fn((...args) => {})
+    effect(() => {
+      for(let key in obj) {
+        console.log (key)
+        fn()
+      }
+    })
+    effect(() => {
+      fn2(obj.total)
+    })
+    expect(fn).toBeCalledTimes(2)
+    obj.count = 7
+    expect(fn).toHaveBeenCalledTimes(2)
+    obj.amaze = 9
+    expect(fn).toHaveBeenCalledTimes(5)
+    delete obj.amaze
+    expect(fn).toBeCalledTimes(7)
+    
+    expect(fn2).toBeCalledTimes(1)
+    obj.total++
+    expect(fn2).toBeCalledTimes(2)
+    obj.total = 9
+    expect(fn2).toBeCalledTimes(3)
+  })
+
+  it('删除对象', () => {
+    const data = {
+      count: 1,
+      total: 10
+    }
+    const obj = reactive(data)
+    const fn = vi.fn((...args) => {})
+    effect(() => {
+      fn(obj.count)
+    })
+    expect(fn).toBeCalledTimes(1)
+    delete obj.count 
+    expect(fn).toBeCalledTimes(2)
+  })
 })

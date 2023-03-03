@@ -1,7 +1,11 @@
+import { ITEREAT_KEY } from './baseHandlers'
+
 interface Option {
   scheduler?: (fn: EffectFunc) => void;
   lazy?: boolean
 }
+
+
 export type EffectFunc = { (): void; options: Option; deps: EffectFunc[]; }
 
 // 存储当前的副作用函数
@@ -35,19 +39,30 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key) {
+export function trigger(target, key, type) {
   const depsMap = proxyMap.get(target)
   if (!depsMap) return 
   const deps = depsMap.get(key)
-  if (!deps) return
+  // if (!deps) return
   // Set结构， delete add 会死循环，用新Set处理
   const depsTorun = new Set(deps)
-  deps.forEach(fn => {
+  deps && deps.forEach(fn => {
     // 避免无限制递归循环
     if (activeEffect !== fn) {
       depsTorun.add(fn)
     }
   })
+
+  // 执行ITEREAT_KEY 收集的依赖
+  if (type === 'ADD' || type === 'DELETE') {
+    const iterateEffect = depsMap.get(ITEREAT_KEY)
+    iterateEffect && iterateEffect.forEach(fn => {
+      if (activeEffect !== fn) {
+        depsTorun.add(fn)
+      }
+    })
+  }
+
   depsTorun.forEach((fn: any) => {
     fn.options.scheduler 
     ? fn.options.scheduler(fn)
