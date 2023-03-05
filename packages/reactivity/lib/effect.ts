@@ -1,4 +1,4 @@
-import { ITEREAT_KEY } from './baseHandlers'
+import { ITEREAT_KEY, shouldTrack } from './baseHandlers'
 
 interface Option {
   scheduler?: (fn: EffectFunc) => void;
@@ -23,7 +23,7 @@ const proxyMap = new WeakMap()
 const stackEffect: EffectFunc[] = []
 
 export function track(target, key) {
-  if (!activeEffect) return 
+  if (!activeEffect || !shouldTrack) return 
   let depsMap = proxyMap.get(target)
   if (!depsMap) {
     depsMap = new Map()
@@ -39,7 +39,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key, type) {
+export function trigger(target, key, type, newValue) {
   const depsMap = proxyMap.get(target)
   if (!depsMap) return 
   const deps = depsMap.get(key)
@@ -59,6 +59,29 @@ export function trigger(target, key, type) {
     iterateEffect && iterateEffect.forEach(fn => {
       if (activeEffect !== fn) {
         depsTorun.add(fn)
+      }
+    })
+  }
+
+  // 当是数组并且是新增，将与length相关的副作用函数收集执行
+  if (Array.isArray(target) && type === 'ADD') {
+    const lenEffect = depsMap.get('length')
+    lenEffect && lenEffect.forEach(fn => {
+      if (activeEffect !== fn ) {
+        depsTorun.add(fn)
+      }
+    })
+  }
+
+  // 修改length为0时，要将大于等于新值的effect取出并执行
+  if (Array.isArray(target) && key === 'length') {
+    depsMap.forEach((effects, index) => {
+      if (index >= newValue) {
+        effects.forEach((fn) => {
+          if (activeEffect !== fn ) {
+            depsTorun.add(fn)
+          }
+        })
       }
     })
   }

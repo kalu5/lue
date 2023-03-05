@@ -280,4 +280,76 @@ describe('reactive', () => {
     objChild.count ++ 
     expect(fn).toBeCalledTimes(2)
   })
+
+  it('代理数组', () => {
+    const data = [12]
+    const arr = reactive(data)
+    let result = ''
+    effect(() => {
+      result = arr[0]
+    })
+    expect(result).toBe(12)
+  })
+
+  it('代理数组(与length相关--新增/删除)', () => {
+    const data = [12]
+    const arr = reactive(data)
+    let result = ''
+    const fn = vi.fn(() => {})
+    effect(() => {
+      result = arr.length
+      fn()
+    })
+    expect(result).toBe(1)
+    arr[1] = 2
+    expect(result).toBe(2)
+    arr.length = 0
+    expect(result).toBe(0)
+    expect(fn).toBeCalledTimes(3)
+  })
+
+  it('代理数组(与length相关--通过length删除,被影响到的项应该触发响应)', () => {
+    const data = [12]
+    const arr = reactive(data)
+    const fn = vi.fn((...args) => {})
+    effect(() => {
+      fn(arr[0])
+    })
+    expect(fn).toBeCalledTimes(1)
+    arr.length = 0
+    expect(fn).toBeCalledTimes(2)
+  })
+
+  it('代理数组-查找相关相关的方法（includes/findIndex/）', () => {
+    const data = [12]
+    const arr = reactive(data)
+    const fn = vi.fn((...args) => {})
+    let result = false
+    effect(() => {
+      result = arr.includes(12)
+    })
+    expect(result).toBe(true)
+
+    const newObj = {}
+    const arrObj = [newObj]
+    const arrP = reactive(arrObj)
+    let resultObj = false
+    effect(() => {
+      resultObj = arrP.includes(newObj)
+    })
+    expect(resultObj).toBe(true)
+  })
+
+  it('代理数组-隐式修改数组长度的方法（pop/push / shift/ unshift / splice）', () => {
+    const data = [12]
+    const arr = reactive(data)
+    const fn = vi.fn((...args) => {})
+    effect(() => {
+      fn(arr.push(1))
+    })
+    effect(() => {
+      fn(arr.push(2))
+    })
+    expect(fn).toBeCalledTimes(2)
+  })
 })
