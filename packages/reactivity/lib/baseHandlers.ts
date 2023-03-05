@@ -6,6 +6,8 @@ export let ITEREAT_KEY = Symbol()
 
 function createGetter(shallow: boolean) {
   return function get(target, key,receiver) {
+    // 通过raw获取原始对象
+    if (key === 'raw') return target
     // 依赖收集
     track (target, key)
     const res = Reflect.get(target, key, receiver)
@@ -18,11 +20,19 @@ function createGetter(shallow: boolean) {
 }
 
 function set(target, key, newValue, receiver) {
+  // 保存旧值
+  const oldVal = target[key]
   // 区分是赋值还是新增值
   const type = hasOwnProperty(target, key) ? 'SET' : 'ADD'
   Reflect.set(target, key, newValue, receiver)
-  // 触发副作用函数执行
-  trigger (target, key, type)
+  // 只有代理对象和原始对象相等，才触发响应（解决访问原型属性时多次响应）
+  if (receiver.raw === target) {
+    // 触发副作用函数执行(新旧值不同时,排除NaN)
+    if (oldVal !== newValue && (oldVal === oldVal || newValue === newValue)) {
+      trigger (target, key, type)
+    }
+  }
+  
   return true
 }
 

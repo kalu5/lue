@@ -224,5 +224,60 @@ describe('reactive', () => {
     expect(fn).toBeCalledTimes(1)
     delete obj.count 
     expect(fn).toBeCalledTimes(2)
+  }),
+
+  it('合理的触发相应（修改的值没有发生变化时，不执行副作用）', () => {
+    const data = {
+      count: 1
+    }
+    const obj = reactive(data)
+    const fn = vi.fn((...args) => {})
+    effect(()=> {
+      fn(obj.count)
+    })
+    expect(fn).toBeCalledTimes(1)
+    obj.count ++ 
+    expect(fn).toBeCalledTimes(2)
+    obj.count = 2
+    expect(fn).toBeCalledTimes(2)
+  })
+
+  it('合理的触发相应（修改的值没有发生变化时，不执行副作用 NaN）', () => {
+    const data = {
+      count: 1
+    }
+    const obj = reactive(data)
+    const fn = vi.fn((...args) => {})
+    effect(()=> {
+      fn(obj.count)
+    })
+    expect(fn).toBeCalledTimes(1)
+    obj.count ++ 
+    expect(fn).toBeCalledTimes(2)
+    obj.count = 2
+    expect(fn).toBeCalledTimes(2)
+    obj.count ++
+    expect(fn).toBeCalledTimes(3)
+    obj.count = NaN
+    expect(fn).toBeCalledTimes(4)
+    obj.count = NaN
+    expect(fn).toBeCalledTimes(4)
+  })
+
+  it('合理的触发相应（对象中没有的属性原型中有，会触发两次执行）', () => {
+    const data = {
+      count: 1
+    }
+    const child = {}
+    const objChild = reactive(child)
+    const obj = reactive(data)
+    Object.setPrototypeOf(objChild, obj)
+    const fn = vi.fn((...args) => {})
+    effect(()=> {
+      fn(objChild.count)
+    })
+    expect(fn).toBeCalledTimes(1)
+    objChild.count ++ 
+    expect(fn).toBeCalledTimes(2)
   })
 })
