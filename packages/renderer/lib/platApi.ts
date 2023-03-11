@@ -1,14 +1,19 @@
 export const platApi = {
   createElement(dom) {
-    return {
-      root: dom
-    }
+    return document.createElement(dom)
   },
   setElementText(el, text) {
     el.textContent = text
   },
   insert(el, parent, anchor) {
-    parent.children = el
-    return parent
+    parent.insertBefore(el, anchor)
+   
+  },
+  unmount(vnode) {
+    const el = vnode.el
+    const parent = el.parentNode;
+    if (parent) {
+      parent.removeChild(el)
+    }
   }
 }

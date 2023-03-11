@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, effect } from '../../reactivity/lib/index'
 import { createRenderer, platApi } from "../lib";
+import '../jsdom-config'
 
 describe('渲染器', () => {
   // 模拟真实的dom操作
@@ -11,13 +12,9 @@ describe('渲染器', () => {
       children: 'render'
     }
     const renderer = createRenderer(platApi)
-    const result = renderer.render(vnode, root)
-    expect(result).toEqual({
-      'root': 'div',
-      children: {
-        root: 'div',
-        textContent: 'render'
-      }
-    })
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div>render</div>')
+    renderer.render(null, root)
+    expect(root.innerHTML).toBe('')
   })
 })
