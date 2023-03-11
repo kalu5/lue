@@ -26,6 +26,38 @@ export const platApi = {
     }
   },
   patchProps(el, key, prevProp, newProp) {
+    // 绑定事件
+    if (/^on/.test(key)) {
+      const event = key.slice(2).toLowerCase()
+      // 存储事件
+      const invokes = el._evi || (el._evi = {})
+      let invoke = invokes[key]
+      if (newProp) {
+        if (!invoke) {
+          invoke = el._evi[key] = (e) => {
+            // 事件绑定时间大于时间触发时间，不执行
+            // 事件触发时间
+            const timeStamp = e.timeStamp
+            if (timeStamp < invoke.attached) return
+            if (Array.isArray(invoke.value)) {
+              invoke.value.forEach(fn => fn(e))
+            } else {
+              invoke.value(e)
+            }
+          }
+          invoke.value = newProp
+          el.addEventListener(event, invoke)
+          // 存储事件绑定时间
+          invoke.attached = window.performance.now()
+        } else {
+          invoke.value = newProp
+        }
+      } else {
+        if (invoke) {
+          el.removeEventListener(event, invoke)
+        }
+      }
+    }
     // 简单处理class和style，实际还需要将动态绑定的class/style处理成字符串
     if(key === 'class') {
       el.className = newProp || ''

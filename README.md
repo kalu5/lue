@@ -8,6 +8,6 @@
 
 ## Renderer
 
-渲染函数的核心diff算法
+渲染器的原理，渲染函数核心diff算法
 
 ## Compiler
