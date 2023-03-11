@@ -17,4 +17,19 @@ describe('渲染器', () => {
     renderer.render(null, root)
     expect(root.innerHTML).toBe('')
   })
+
+  it ('添加属性', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: 'render',
+      props: {
+        id: 'app',
+        class: 'root'
+      }
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div id="app" class="root">render</div>')
+  })
 })

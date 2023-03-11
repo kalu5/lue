@@ -1,6 +1,6 @@
 export function createRenderer(api) {
 
-  const { createElement, setElementText, insert, unmount } = api
+  const { createElement, setElementText, insert, unmount, patchProps } = api
 
   // 将vnode渲染为真实的dom节点
   function render(vnode: object, container) {
@@ -29,13 +29,17 @@ export function createRenderer(api) {
     /**
      * {
      *   type: 'div',
-     *   prop: {},
+     *   props: {},
      *   children: []
      * }
     */
     const el = vnode.el = createElement(vnode.type)
-    if (vnode.prop) {
-
+    if (vnode.props) {
+      // 处理prop
+      for (let key in vnode.props) {
+        //                  oldValue newValue
+        patchProps(el, key, null, vnode.props[key])
+      }
     }
 
     if (typeof vnode.children === 'string') {
