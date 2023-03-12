@@ -176,5 +176,25 @@ describe('渲染器', () => {
     }
     renderer.render(newVnode, root)
     expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p><div>p8</div></div>')
+    const newVnode1 = {
+      type: 'div',
+      children: [
+        { type: 'p', children: 'p6' },
+        { type: 'p', children: 'p7' },
+      ]
+    }
+    renderer.render(newVnode1, root)
+    expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p></div>')
+
+    const newVnode2 = {
+      type: 'div',
+      children: [
+        { type: 'p', children: 'p6' },
+        { type: 'p', children: 'p7' },
+        { type: 'h2', children: 'h2' },
+      ]
+    }
+    renderer.render(newVnode2, root)
+    expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p><h2>h2</h2></div>')
   })
 })

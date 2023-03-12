@@ -7,7 +7,7 @@ export function createRenderer(api) {
   // 将vnode渲染为真实的dom节点
   function render(vnode: object, container) {
     if (vnode) {
-      patch(container._vnode, vnode, container)
+      patch(container._vnode, vnode, container, null)
     } else {
       if (container._vnode) {
         // 卸载操作
@@ -19,7 +19,7 @@ export function createRenderer(api) {
 
   }
 
-  function patch(oldVnode, newVnode, container) {
+  function patch(oldVnode, newVnode, container, anchor) {
     // 新旧节点类型不一样还是需要卸载后重新挂载
     // 新旧节点类型相同才能找到可复用的节点进行复用，提升性能
     if (oldVnode && oldVnode.type !== newVnode.type) {
@@ -31,7 +31,7 @@ export function createRenderer(api) {
     // 标签元素
     if (typeof type === 'string') {
       if (!oldVnode) {
-        mountElement(newVnode, container)
+        mountElement(newVnode, container, anchor)
       } else {
         patchElement(oldVnode, newVnode, container)
       }
@@ -56,7 +56,7 @@ export function createRenderer(api) {
     // Fragment
     else if (type === FRAGMENT) {
       if (!oldVnode) {
-        newVnode.children.forEach(child => patch(null, child, container))
+        newVnode.children.forEach(child => patch(null, child, container, anchor))
       } else {
         patchChildren(oldVnode, newVnode, container)
       }
@@ -64,7 +64,7 @@ export function createRenderer(api) {
     
   }
 
-  function mountElement(vnode, container) {
+  function mountElement(vnode, container, anchor) {
     /**
      * {
      *   type: 'div',
@@ -86,11 +86,11 @@ export function createRenderer(api) {
     } else if (Array.isArray(vnode.children)) {
       // 数组，遍历patch
       vnode.children.forEach(child => {
-        patch(null, child, el)
+        patch(null, child, el, anchor)
       })
     }
 
-    insert(el, container)
+    insert(el, container, anchor)
   }
   function patchElement(oldVnode, newVnode, container) {
     const el = newVnode.el = oldVnode.el;
@@ -129,7 +129,7 @@ export function createRenderer(api) {
       }
       setElementText(el, '')
       newVnode.children.forEach(child => {
-        patch(null, child,el)
+        patch(null, child,el, null)
       })
     } else {
       if (Array.isArray(oldVnode.children)) {
@@ -155,7 +155,7 @@ export function createRenderer(api) {
           if (n2Child.key === n1Child.key) {
             isFind = true;
             // 可复用也需要patch，内容可能不一样
-            patch(n1Child, n2Child,el)
+            patch(n1Child, n2Child,el, null)
             // 找到可复用节点后，当前index大于maxIndex需要移动dom
             if (n1Index > maxIndex) {
               const prevVnode = n2.children[n2Index - 1]
@@ -172,7 +172,7 @@ export function createRenderer(api) {
         })
   
       } catch(e) {
-        return 
+        
       }
       
       // 没有找到说明是新节点需要挂载
@@ -181,8 +181,11 @@ export function createRenderer(api) {
         const prevVnode = n2.children[n2Index - 1]
         if (prevVnode) {
           anchor = prevVnode.el.nextSibling
+        } else {
+          anchor = el.firstChild
         }
-        insert(n2Child.el, el, anchor)
+        // 挂载
+        patch(null, n2Child, el, anchor)
       }
     })
 
