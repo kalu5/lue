@@ -1,4 +1,5 @@
 export const TEXT = Symbol()
+export const FRAGMENT = Symbol()
 export function createRenderer(api) {
 
   const { createElement, setElementText, insert, unmount, patchProps, createTextNode, setText } = api
@@ -50,6 +51,14 @@ export function createRenderer(api) {
         if (newVnode.children !== oldVnode.children) {
           setText(el, newVnode.children)
         }
+      }
+    }
+    // Fragment
+    else if (type === FRAGMENT) {
+      if (!oldVnode) {
+        newVnode.children.forEach(child => patch(null, child, container))
+      } else {
+        patchChildren(oldVnode, newVnode, container)
       }
     }
     
@@ -116,6 +125,9 @@ export function createRenderer(api) {
     } else if (Array.isArray(newVnode.children)) {
       if (Array.isArray(oldVnode.children)) {
         // diff算法
+        // 先用暴力方法
+        oldVnode.children.forEach(child => unmount(child))
+        newVnode.children.forEach(child => patch(null, child, el))
       }
       setElementText(el, '')
       newVnode.children.forEach(child => {

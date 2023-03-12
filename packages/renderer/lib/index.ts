@@ -1,2 +1,2 @@
-export { createRenderer, TEXT } from './renderer'
+export { createRenderer, TEXT, FRAGMENT } from './renderer'
 export { platApi } from './platApi'

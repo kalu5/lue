@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, effect } from '../../reactivity/lib/index'
-import { createRenderer, platApi, TEXT } from "../lib";
+import { createRenderer, platApi, TEXT, FRAGMENT } from "../lib";
 import '../jsdom-config'
 
 describe('渲染器', () => {
@@ -126,5 +126,30 @@ describe('渲染器', () => {
     }
     renderer.render(newVnode, root)
     expect(root.innerHTML).toBe('newRender')
+  })
+
+  it ('fragment', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: FRAGMENT,
+      children: [
+        { type: 'p', children: 'p1' },
+        { type: 'p', children: 'p2' },
+        { type: 'p', children: 'p3' },
+      ]
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<p>p1</p><p>p2</p><p>p3</p>')
+    const newVnode = {
+      type: FRAGMENT,
+      children: [
+        { type: 'p', children: 'p6' },
+        { type: 'p', children: 'p7' },
+        { type: 'p', children: 'p8' },
+      ]
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('<p>p6</p><p>p7</p><p>p8</p>')
   })
 })

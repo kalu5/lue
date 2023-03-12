@@ -1,7 +1,23 @@
+import { FRAGMENT } from './index'
+
 // 正确设置属性 （from时，使用setAttribute, el上有的属性使用el[key]）
 function   shouldSetAsProp(el, key, newProp) {
   if (key === 'form' && el.tagName === 'INPUT') return false
   return key in el
+}
+
+function unmount(vnode) {
+  // 处理fragment
+  if (vnode.type === FRAGMENT) {
+    vnode.children.forEach(child => unmount(child))
+    return 
+  }
+  // 找到节点对应的真实dom的父节点，删除子节点
+  const el = vnode.el
+  const parent = el.parentNode;
+  if (parent) {
+    parent.removeChild(el)
+  }
 }
 
 export const platApi = {
@@ -17,14 +33,7 @@ export const platApi = {
     parent.insertBefore(el, anchor)
    
   },
-  unmount(vnode) {
-    // 找到节点对应的真实dom的父节点，删除子节点
-    const el = vnode.el
-    const parent = el.parentNode;
-    if (parent) {
-      parent.removeChild(el)
-    }
-  },
+  unmount,
   patchProps(el, key, prevProp, newProp) {
     // 绑定事件
     if (/^on/.test(key)) {
