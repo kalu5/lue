@@ -48,4 +48,66 @@ describe('渲染器', () => {
     renderer.render(vnode, root)
     expect(root.innerHTML.includes('onclick')).toBe(true)
   })
+
+  it ('更新-新节点为文本节点旧节点为一组节点', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: [
+        {
+          type: 'p',
+          children: 'oldChild'
+        }
+      ]
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div><p>oldChild</p></div>')
+    const newVnode = {
+      type: 'div',
+      children: 'newRender'
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('<div>newRender</div>')
+  })
+
+
+  it ('更新-新节点为文本节点', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: 'render'
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div>render</div>')
+    const newVnode = {
+      type: 'div',
+      children: 'newRender'
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('<div>newRender</div>')
+  })
+
+  it ('更新-新节点为一组节点', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: 'render'
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div>render</div>')
+    const newVnode = {
+      type: 'div',
+      children: [
+        {
+          type: 'p',
+          children: 'childRender'
+        }
+      ]
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('<div><p>childRender</p></div>')
+  })
 })
