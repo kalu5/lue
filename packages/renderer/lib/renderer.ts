@@ -125,9 +125,7 @@ export function createRenderer(api) {
     } else if (Array.isArray(newVnode.children)) {
       if (Array.isArray(oldVnode.children)) {
         // diff算法
-        // 先用暴力方法
-        oldVnode.children.forEach(child => unmount(child))
-        newVnode.children.forEach(child => patch(null, child, el))
+        simpleDiff(oldVnode, newVnode, el)
       }
       setElementText(el, '')
       newVnode.children.forEach(child => {
@@ -142,6 +140,59 @@ export function createRenderer(api) {
         setElementText(el, '')
       }
     }
+  }
+
+  // 简单diff
+  function simpleDiff(n1, n2, el) {
+    // 遍历新节点children
+    let maxIndex // 存储最大的索引
+    n2.children.forEach((n2Child, n2Index) => {
+      // 是否找到了可复用的节点
+      let isFind = false;
+      maxIndex = n2Index
+      try {
+        n1.children.forEach((n1Child, n1Index) => {
+          if (n2Child.key === n1Child.key) {
+            isFind = true;
+            // 可复用也需要patch，内容可能不一样
+            patch(n1Child, n2Child,el)
+            // 找到可复用节点后，当前index大于maxIndex需要移动dom
+            if (n1Index > maxIndex) {
+              const prevVnode = n2.children[n2Index - 1]
+              if (prevVnode) {
+                const prevEl = prevVnode.el.nextSibling
+                // 移动dom
+                insert(n2Child.el, el, prevEl)
+              }
+            } else {
+              maxIndex = n1Index
+            }
+            throw new Error('break')
+          }
+        })
+  
+      } catch(e) {
+        return 
+      }
+      
+      // 没有找到说明是新节点需要挂载
+      if (!isFind) {
+        let anchor
+        const prevVnode = n2.children[n2Index - 1]
+        if (prevVnode) {
+          anchor = prevVnode.el.nextSibling
+        }
+        insert(n2Child.el, el, anchor)
+      }
+    })
+
+    // 遍历旧节点看是否有要移除的旧节点
+    n1.children.forEach((n1Child) => {
+      let hasChild = n2.children.find(n2Child => n1Child.key === n2Child.key)
+      if (!hasChild) {
+        unmount(n1Child)
+      }
+    })
   }
 
   return {
