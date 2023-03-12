@@ -1,6 +1,7 @@
+export const TEXT = Symbol()
 export function createRenderer(api) {
 
-  const { createElement, setElementText, insert, unmount, patchProps } = api
+  const { createElement, setElementText, insert, unmount, patchProps, createTextNode, setText } = api
 
   // 将vnode渲染为真实的dom节点
   function render(vnode: object, container) {
@@ -37,6 +38,19 @@ export function createRenderer(api) {
     // 组件
     else if (typeof type === 'object') {
 
+    }
+    // 文本节点
+    else if (type === TEXT) {
+      if (!oldVnode) {
+        const el = newVnode.el = createTextNode(newVnode.children)
+        insert(el, container)
+      } else {
+        // 新文本内容更新旧文本内容
+        const el = newVnode.el = oldVnode.el
+        if (newVnode.children !== oldVnode.children) {
+          setText(el, newVnode.children)
+        }
+      }
     }
     
   }

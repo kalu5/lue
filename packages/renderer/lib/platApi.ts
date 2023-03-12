@@ -79,5 +79,13 @@ export const platApi = {
     } else {
       el.setAttribute(key, newProp)
     }
+  },
+  // 创建文本
+  createTextNode (text) {
+    return document.createTextNode(text)
+  },
+  // 设置文本
+  setText(el, text) {
+    el.nodeValue = text
   }
 }

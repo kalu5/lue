@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, effect } from '../../reactivity/lib/index'
-import { createRenderer, platApi } from "../lib";
+import { createRenderer, platApi, TEXT } from "../lib";
 import '../jsdom-config'
 
 describe('渲染器', () => {
@@ -109,5 +109,22 @@ describe('渲染器', () => {
     }
     renderer.render(newVnode, root)
     expect(root.innerHTML).toBe('<div><p>childRender</p></div>')
+  })
+
+  it ('文本节点', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: TEXT,
+      children: 'render'
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('render')
+    const newVnode = {
+      type: TEXT,
+      children: 'newRender'
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('newRender')
   })
 })
