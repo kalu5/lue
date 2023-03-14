@@ -125,7 +125,8 @@ export function createRenderer(api) {
     } else if (Array.isArray(newVnode.children)) {
       if (Array.isArray(oldVnode.children)) {
         // diff算法
-        simpleDiff(oldVnode, newVnode, el)
+        // simpleDiff(oldVnode, newVnode, el)
+        doubleDiff(oldVnode, newVnode, el)
       }
       setElementText(el, '')
       newVnode.children.forEach(child => {
@@ -196,6 +197,81 @@ export function createRenderer(api) {
         unmount(n1Child)
       }
     })
+  }
+
+  // 双端diff 减少Dom移动次数
+  function doubleDiff(n1, n2, el) {
+    const n1Child = n1.children
+    const n2Child = n2.children
+    // 定义索引
+    let startN1Index = 0,
+        endN1Index = n1Child.length - 1,
+        startN2Index = 0,
+        endN2Index = n2Child.length - 1;
+    // 定义索引对应的节点
+    let startN1Vnode = n1Child[startN1Index],
+        endN1Vnode = n1Child[endN1Index],
+        startN2Vnode = n2Child[startN2Index],
+        endN2Vnode = n2Child[endN2Index];
+
+    // 遍历寻找可复用节点
+    while(startN1Index <= endN1Index && startN2Index <= endN2Index) {
+      if (!startN1Vnode) {
+        startN1Vnode = n1Child[++startN1Index]
+      } else if (!endN1Vnode) {
+        endN1Vnode = n1Child[--endN1Index]
+      } else if (startN1Vnode.key === startN2Vnode.key) {
+        patch(startN1Vnode, startN2Vnode, el, null)
+        startN1Vnode = n1Child[++startN1Index]
+        startN2Vnode = n2Child[++startN2Index]
+      } else if (endN1Vnode.key === endN2Vnode.key) {
+        patch(endN1Vnode, endN2Vnode, el, null)
+        endN1Vnode = n1Child[--endN1Index]
+        endN2Vnode = n2Child[--endN2Index]
+      } else if (startN1Vnode.key === endN2Vnode.key) {
+        patch(startN1Vnode, endN2Vnode, el, null)
+        // 将旧节点开始节点对应的真实dom移动到旧节点最后节点对应的真实dom后
+        insert(startN1Vnode.el, el, endN1Vnode.el.nextSibling)
+        startN1Vnode = n1Child[++startN1Index]
+        endN2Vnode = n2Child[--endN2Index]
+      } else if (endN1Vnode.key === startN2Vnode.key) {
+        patch(endN1Vnode, startN2Vnode, el, null)
+        // 将旧节点结束节点对应的真实dom移动到旧节点开始节点对应的真实dom前
+        insert(endN1Vnode.el, el, startN1Vnode.el)
+        endN1Vnode = n1Child[--endN1Index]
+        startN2Vnode = n2Child[++startN2Index]
+      } else {
+        // 都没有找到可复用节点
+        const n1Index = n1Child.find(child => child.key === startN2Vnode.key)
+        if (n1Index !== -1) {
+          let n1Vnode = n1Child[n1Index]
+          patch(n1Vnode, startN2Vnode, el, null)
+          insert(n1Vnode.el, el, startN1Vnode.el)
+          n1Vnode = undefined
+          
+        } else {
+          // 新增
+          patch(null, startN2Vnode, el, startN1Vnode.el)
+        }
+        startN2Vnode = n2Child[++startN2Index]
+      }
+    }
+
+    // 检查index
+    if (startN1Index > endN1Index && startN2Index <= endN2Index) {
+      // 新增
+      for(let i = startN2Index; i <= endN2Index; i++) {
+        //当前的头部节点
+        const anchor = n2Child[endN2Index + 1] ? n2Child[endN2Index + 1].el : null
+        patch(null, n2Child[i], el, anchor)
+      }
+    } else if (startN2Index > endN2Index && startN1Index <= endN1Index) {
+      // 卸载
+      for(let i = startN1Index; i <= endN1Index; i++) {
+        unmount(n1Child[i])
+      }
+    }
+
   }
 
   return {
