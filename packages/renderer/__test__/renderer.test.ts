@@ -133,9 +133,9 @@ describe('渲染器', () => {
     const vnode = {
       type: FRAGMENT,
       children: [
-        { type: 'p', children: 'p1' },
-        { type: 'p', children: 'p2' },
-        { type: 'p', children: 'p3' },
+        { type: 'p', key: 1, children: 'p1' },
+        { type: 'p',  key: 2, children: 'p2' },
+        { type: 'p',  key: 3, children: 'p3' },
       ]
     }
     const renderer = createRenderer(platApi)
@@ -144,9 +144,9 @@ describe('渲染器', () => {
     const newVnode = {
       type: FRAGMENT,
       children: [
-        { type: 'p', children: 'p6' },
-        { type: 'p', children: 'p7' },
-        { type: 'p', children: 'p8' },
+        { type: 'p',  key: 2, children: 'p6' },
+        { type: 'p',  key: 1, children: 'p7' },
+        { type: 'p',  key: 3, children: 'p8' },
       ]
     }
     renderer.render(newVnode, root)
@@ -158,9 +158,9 @@ describe('渲染器', () => {
     const vnode = {
       type: 'div',
       children: [
-        { type: 'p', children: 'p1' },
-        { type: 'p', children: 'p2' },
-        { type: 'p', children: 'p3' },
+        { type: 'p',  key: 1, children: 'p1' },
+        { type: 'p',  key: 2, children: 'p2' },
+        { type: 'p',  key: 3, children: 'p3' },
       ]
     }
     const renderer = createRenderer(platApi)
@@ -169,9 +169,9 @@ describe('渲染器', () => {
     const newVnode = {
       type: 'div',
       children: [
-        { type: 'p', children: 'p6' },
-        { type: 'p', children: 'p7' },
-        { type: 'div', children: 'p8' },
+        { type: 'p',  key: 2, children: 'p6' },
+        { type: 'p',  key: 1, children: 'p7' },
+        { type: 'div',  key: 3, children: 'p8' },
       ]
     }
     renderer.render(newVnode, root)
@@ -179,8 +179,8 @@ describe('渲染器', () => {
     const newVnode1 = {
       type: 'div',
       children: [
-        { type: 'p', children: 'p6' },
-        { type: 'p', children: 'p7' },
+        { type: 'p',  key: 1, children: 'p6' },
+        { type: 'p',  key: 2, children: 'p7' },
       ]
     }
     renderer.render(newVnode1, root)
@@ -189,9 +189,54 @@ describe('渲染器', () => {
     const newVnode2 = {
       type: 'div',
       children: [
-        { type: 'p', children: 'p6' },
-        { type: 'p', children: 'p7' },
-        { type: 'h2', children: 'h2' },
+        { type: 'p',  key: 1, children: 'p6' },
+        { type: 'p',  key: 3, children: 'p7' },
+        { type: 'h2',  key: 2, children: 'h2' },
+      ]
+    }
+    renderer.render(newVnode2, root)
+    expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p><h2>h2</h2></div>')
+  })
+
+  it ('快速diff', () => {
+    const root = platApi.createElement('div')
+    const vnode = {
+      type: 'div',
+      children: [
+        { type: 'p', key: 1, children: 'p1' },
+        { type: 'p', key: 2, children: 'p2' },
+        { type: 'p', key: 3, children: 'p3' },
+      ]
+    }
+    const renderer = createRenderer(platApi)
+    renderer.render(vnode, root)
+    expect(root.innerHTML).toBe('<div><p>p1</p><p>p2</p><p>p3</p></div>')
+    const newVnode = {
+      type: 'div',
+      children: [
+        { type: 'p', key: 3, children: 'p6' },
+        { type: 'p', key: 2, children: 'p7' },
+        { type: 'div', key: 1,  children: 'p8' },
+      ]
+    }
+    renderer.render(newVnode, root)
+    expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p><div>p8</div></div>')
+    const newVnode1 = {
+      type: 'div',
+      children: [
+        { type: 'p', key: 1, children: 'p6' },
+        { type: 'p', key: 2,  children: 'p7' },
+      ]
+    }
+    renderer.render(newVnode1, root)
+    expect(root.innerHTML).toBe('<div><p>p6</p><p>p7</p></div>')
+
+    const newVnode2 = {
+      type: 'div',
+      children: [
+        { type: 'p', key: 2, children: 'p6' },
+        { type: 'p', key: 1, children: 'p7' },
+        { type: 'h2', key: 4,  children: 'h2' },
       ]
     }
     renderer.render(newVnode2, root)

@@ -126,7 +126,8 @@ export function createRenderer(api) {
       if (Array.isArray(oldVnode.children)) {
         // diff算法
         // simpleDiff(oldVnode, newVnode, el)
-        doubleDiff(oldVnode, newVnode, el)
+        // doubleDiff(oldVnode, newVnode, el)
+        quickDiff(oldVnode, newVnode, el)
       }
       setElementText(el, '')
       newVnode.children.forEach(child => {
@@ -274,8 +275,172 @@ export function createRenderer(api) {
 
   }
 
+  // 快速diff 
+  function quickDiff(n1, n2, el) {
+    // 预处理 首尾寻找可复用节点
+    const n1Child = n1.children
+    const n2Child = n2.children
+    let j = 0;
+    let oldVnode = n1Child[j]
+    let newVnode = n2Child[j]
+    while(oldVnode.key === newVnode.key) {
+      patch(oldVnode, newVnode, el, null)
+      j++
+      oldVnode = n1Child[j]
+      newVnode = n2Child[j]
+    }
+
+    let oldEndIndex = n1Child.length - 1
+    let newEndIndex = n2Child.length - 1
+    oldVnode = n1Child[oldEndIndex]
+    newVnode = n2Child[newEndIndex]
+    while(oldVnode.key === newVnode.key) {
+      patch(oldVnode, newVnode, el, null)
+      oldEndIndex --
+      newEndIndex --
+      oldVnode = n1Child[oldEndIndex]
+      newVnode = n2Child[newEndIndex]
+    }
+
+    // 添加和删除
+    if(j > oldEndIndex && j <= newEndIndex) {
+      const anchorIndex = newEndIndex + 1
+      const anchor = anchorIndex < n2Child.length ? n2Child[anchorIndex].el : null
+      while(j <= newEndIndex) {
+        patch(null, n2Child[j++], el, anchor)
+      }
+    } else if ( j <= oldEndIndex && j > newEndIndex ) {
+      while(j <= oldEndIndex) {
+        unmount(n1Child[j++])
+      }
+    } else {
+      // 处理非理想情况
+      // 未处理的节点
+      const count = newEndIndex - j + 1
+      // 定义数组存储未处理节点在旧节点中的索引
+      const source = new Array(count)
+      source.fill(-1)
+
+      // 填充
+      const oldStartIndex = j
+      const newStartIndex = j
+
+      // 新节点索引表
+      let keyIndex = {}
+      for(let i = newStartIndex; i <= newEndIndex; i++) {
+        keyIndex[n2Child[i].key] = i
+      }
+
+      // 移动dom
+      let move = false
+      let pos = 0
+      // 更新过的节点
+      let patched = 0
+
+      // 在旧的节点中找到复用节点并填充数组
+      for(let k = oldStartIndex; k <= oldEndIndex; k++) {
+        oldVnode = n1Child[k]
+        // 如果更新过的节点大于将要更新的节点，需要卸载
+        if (patched <= count) {
+          const hasKey = keyIndex[oldVnode.key]
+          if (typeof hasKey != 'undefined') {
+            // 找到相同key
+            newVnode = n2Child[hasKey]
+            patch(oldVnode, newVnode, el, null)
+            source[hasKey - newStartIndex] = k
+  
+            // 判断是否需要移动
+            if (k < pos) {
+              move = true
+            } else {
+              pos = k
+            }
+          } else {
+            // 卸载
+            unmount(oldVnode)
+          }
+        } else {
+          unmount(oldVnode)
+        }
+       
+      }
+
+      // 移动dom
+      if (move) {
+        // 计算最长递增子序列
+        // 对未处理的节点重新排序，在递增子序列中的索引所对应的dom不需要移动
+        let seq = lis(source)
+        let s = seq.length - 1
+        let i = count - 1
+        for (i; i >= 0 ; i--) {
+          if (source[i] === -1) {
+            // 新节点需要挂载
+            const pos = newStartIndex + i
+            const newVnode = n2Child[pos]
+            const nextPos = pos + 1
+            const anchor = nextPos < n2Child.length ? n2Child[nextPos].el : null
+            patch(null ,newVnode, el, anchor)
+          } else if (i !== seq[s]) {
+            // 需要移动
+            const pos = newStartIndex + i
+            const newVnode = n2Child[pos]
+            const nextPos = pos + 1
+            const anchor = nextPos < n2Child.length ? n2Child[nextPos].el : null
+            insert(newVnode.el ,el, anchor)
+          } else {
+            // 不需要移动
+            s--
+          }
+        }
+      }
+
+    }
+  }
+
   return {
     render,
     patch
   }
+}
+
+// 计算最长递增子序列
+function lis(arr) {
+  const p = arr.slice
+  const result = [0]
+  let j , i, u, v,c;
+  const len = arr.length;
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        c = ((u + v) / 2) | 0
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[ u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[ u - 1]
+  while(u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }
